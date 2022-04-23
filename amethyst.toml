@@ -1,4 +1,6 @@
 [[image]]
+name = "ubuntu"
+base_image = "ubuntu:22.04"
 modules = [
     "./test",
     { "type" = "add", "source" = "./source", "destination" = "./destination" },
