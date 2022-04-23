@@ -1,8 +1,5 @@
-[[scriptlets]]
-type = "add"
-source = "./a"
-destination = "./b"
-[[scriptlets]]
-type = "add"
-source = "./c"
-destination = "./d"
+[[image]]
+modules = [
+    "./test",
+    { "type" = "add", "source" = "./source", "destination" = "./destination" },
+]

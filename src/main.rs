@@ -19,7 +19,13 @@ fn main() {
     let args = Args::parse();
     let config_directory = &args.config_directory;
     match config::load(config_directory) {
-        Ok(config) => { println!("{:?}", config) },
-        Err(error) => println!("cannot load configs from {} [{}]", config_directory.display(), error),
+        Ok(config) => {
+            println!("{:?}", config)
+        }
+        Err(error) => println!(
+            "cannot load configs from {} [{}]",
+            config_directory.display(),
+            error
+        ),
     };
 }
