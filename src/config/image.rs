@@ -9,7 +9,10 @@ pub enum ImageType {
 #[derive(Debug, Deserialize, Clone)]
 pub struct Image {
     modules: Vec<super::module::Module>,
-    #[serde(default = "default_base_image", deserialize_with = "deserialize_base_image")]
+    #[serde(
+        default = "default_base_image",
+        deserialize_with = "deserialize_base_image"
+    )]
     base_image: ImageType,
     name: String,
 }
@@ -19,7 +22,8 @@ fn default_base_image() -> ImageType {
 }
 
 fn deserialize_base_image<'de, D>(deserializer: D) -> Result<ImageType, D::Error>
-    where D: Deserializer<'de>
+where
+    D: Deserializer<'de>,
 {
     let image_type: Option<String> = Deserialize::deserialize(deserializer)?;
     match image_type {
@@ -29,14 +33,15 @@ fn deserialize_base_image<'de, D>(deserializer: D) -> Result<ImageType, D::Error
 }
 
 impl Image {
-    pub fn slurp_scriptlets(self) -> Result<Vec<super::scriptlet::Scriptlet>, Box<dyn std::error::Error>> {
-        let scriptlets =
-            self
-                .modules
-                .into_iter()
-                .map(|module| module.to_scriptlets())
-                .collect::<Result<Vec<_>, _>>()?
-                .concat();
+    pub fn slurp_scriptlets(
+        self,
+    ) -> Result<Vec<super::scriptlet::Scriptlet>, Box<dyn std::error::Error>> {
+        let scriptlets = self
+            .modules
+            .into_iter()
+            .map(|module| module.to_scriptlets())
+            .collect::<Result<Vec<_>, _>>()?
+            .concat();
         Ok(scriptlets)
     }
 }

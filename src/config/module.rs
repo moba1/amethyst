@@ -9,7 +9,10 @@ pub enum Module {
 }
 
 impl Module {
-    pub fn to_scriptlets(self) -> Result<Vec<super::scriptlet::Scriptlet>, Box<dyn std::error::Error>> {        #[derive(Debug, Deserialize)]
+    pub fn to_scriptlets(
+        self,
+    ) -> Result<Vec<super::scriptlet::Scriptlet>, Box<dyn std::error::Error>> {
+        #[derive(Debug, Deserialize)]
         struct Scriptlets {
             scriptlets: Vec<super::scriptlet::Scriptlet>,
         }
@@ -19,7 +22,7 @@ impl Module {
                 let raw_scriptlets = std::fs::read_to_string(path)?;
                 let scriptlets: Scriptlets = toml::from_str(&raw_scriptlets)?;
                 Ok(scriptlets.scriptlets)
-            },
+            }
             Self::Inline(scriptlet) => Ok(vec![scriptlet]),
         }
     }
