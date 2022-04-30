@@ -1,7 +1,5 @@
 use serde::{Deserialize, Deserializer};
 
-use super::scriptlet::Scriptlet;
-
 #[derive(Debug, Deserialize, Clone)]
 pub enum ImageType {
     Scratch,
