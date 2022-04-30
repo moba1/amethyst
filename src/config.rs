@@ -1,3 +1,7 @@
+pub mod image;
+pub mod module;
+pub mod scriptlet;
+
 use crate::result;
 use serde::Deserialize;
 use std::convert;
@@ -6,10 +10,6 @@ use std::fmt;
 use std::fs;
 use std::io::Read;
 use std::path;
-
-pub mod image;
-pub mod module;
-pub mod scriptlet;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Config {

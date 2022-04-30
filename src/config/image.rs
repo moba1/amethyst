@@ -1,5 +1,5 @@
-use serde::{Deserialize, Deserializer};
 use crate::result;
+use serde::{Deserialize, Deserializer};
 
 #[derive(Debug, Deserialize, Clone)]
 pub enum ImageType {
@@ -34,10 +34,7 @@ where
 }
 
 impl Image {
-    pub fn slurp_scriptlets(
-        self,
-    ) -> result::Result<Vec<super::scriptlet::Scriptlet>>
-    {
+    pub fn slurp_scriptlets(self) -> result::Result<Vec<super::scriptlet::Scriptlet>> {
         let scriptlets = self
             .modules
             .into_iter()
