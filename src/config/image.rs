@@ -2,13 +2,13 @@ use serde::{Deserialize, Deserializer};
 
 use super::scriptlet::Scriptlet;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub enum ImageType {
     Scratch,
     BaseImage(String),
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Image {
     modules: Vec<super::module::Module>,
     #[serde(default = "default_base_image", deserialize_with = "deserialize_base_image")]

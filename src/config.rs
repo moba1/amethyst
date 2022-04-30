@@ -5,7 +5,7 @@ pub mod image;
 pub mod module;
 pub mod scriptlet;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Config {
     #[serde(rename = "image")]
     images: Vec<image::Image>,

@@ -20,7 +20,8 @@ fn main() {
     let config_directory = &args.config_directory;
     match config::load(config_directory) {
         Ok(config) => {
-            let images = dbg!(config).images();
+            let images = config.clone().images();
+            let _ = config.images();
             for image in images {
                 println!("{:?}", image.slurp_scriptlets());
             }
