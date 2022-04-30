@@ -1,6 +1,4 @@
-use std::convert;
-use std::path;
-
+mod command;
 mod config;
 mod result;
 
@@ -19,36 +17,12 @@ struct Args {
     command: Commands,
 }
 
-fn load_config<P>(config_directory: P) -> result::Result<config::Config>
-where
-    P: convert::AsRef<path::Path>,
-{
-    match config::load(&config_directory) {
-        Ok(config) => Ok(config),
-        err => err,
-    }
-}
-
 fn main() {
     let args = Args::parse();
     let command = match &args.command {
-        Commands::Build { config_directory } => || build(config_directory.clone()),
+        Commands::Build { config_directory } => || command::build(config_directory.clone()),
     };
     if let Err(err) = command() {
         eprintln!("{}", err);
     }
-}
-
-fn build<P>(config_directory: P) -> result::Result<()>
-where
-    P: convert::AsRef<path::Path>,
-{
-    let config = load_config(config_directory)?;
-    for image in config.images() {
-        match image.slurp_scriptlets() {
-            Ok(scriptlets) => println!("{:?}", scriptlets),
-            Err(err) => return Err(err),
-        }
-    }
-    Ok(())
 }
