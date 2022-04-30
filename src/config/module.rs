@@ -1,8 +1,8 @@
 use serde::Deserialize;
+use std::error;
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(untagged)]
-#[non_exhaustive]
 pub enum Module {
     File(String),
     Inline(super::scriptlet::Scriptlet),
@@ -11,7 +11,7 @@ pub enum Module {
 impl Module {
     pub fn to_scriptlets(
         self,
-    ) -> Result<Vec<super::scriptlet::Scriptlet>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<super::scriptlet::Scriptlet>, Box<dyn error::Error + Send + Sync + 'static>> {
         #[derive(Debug, Deserialize)]
         struct Scriptlets {
             scriptlets: Vec<super::scriptlet::Scriptlet>,

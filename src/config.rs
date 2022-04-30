@@ -1,5 +1,8 @@
 use serde::Deserialize;
 use std::io::Read;
+use std::error;
+use std::convert;
+use std::fs;
 
 pub mod image;
 pub mod module;
@@ -11,12 +14,12 @@ pub struct Config {
     images: Vec<image::Image>,
 }
 
-pub fn load<Path>(config_directory: Path) -> Result<Config, Box<dyn std::error::Error>>
+pub fn load<Path>(config_directory: Path) -> Result<Config, Box<dyn error::Error + Send + Sync + 'static>>
 where
-    Path: std::convert::AsRef<std::path::Path>,
+    Path: convert::AsRef<std::path::Path>,
 {
     let entrypoint = config_directory.as_ref().join("amethyst.toml");
-    let mut file = std::fs::File::open(&entrypoint)?;
+    let mut file = fs::File::open(&entrypoint)?;
     let mut raw_config = String::new();
     file.read_to_string(&mut raw_config)?;
 

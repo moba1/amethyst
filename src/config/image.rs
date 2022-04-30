@@ -1,4 +1,5 @@
 use serde::{Deserialize, Deserializer};
+use std::error;
 
 #[derive(Debug, Deserialize, Clone)]
 pub enum ImageType {
@@ -35,7 +36,7 @@ where
 impl Image {
     pub fn slurp_scriptlets(
         self,
-    ) -> Result<Vec<super::scriptlet::Scriptlet>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<super::scriptlet::Scriptlet>, Box<dyn error::Error + Send + Sync + 'static>> {
         let scriptlets = self
             .modules
             .into_iter()
@@ -43,5 +44,9 @@ impl Image {
             .collect::<Result<Vec<_>, _>>()?
             .concat();
         Ok(scriptlets)
+    }
+
+    pub fn base_image(self) -> ImageType {
+        self.base_image
     }
 }
