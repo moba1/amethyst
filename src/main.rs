@@ -20,7 +20,10 @@ fn main() {
     let config_directory = &args.config_directory;
     match config::load(config_directory) {
         Ok(config) => {
-            println!("{:?}", config)
+            let images = dbg!(config).images();
+            for image in images {
+                println!("{:?}", image.slurp_scriptlets());
+            }
         }
         Err(error) => println!(
             "cannot load configs from {} [{}]",

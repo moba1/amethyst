@@ -1,0 +1,9 @@
+[[scriptlets]]
+type = "add"
+source = "./source"
+destination = "./destination"
+
+[[scriptlets]]
+type = "add"
+source = "./source"
+destination = "./destination"

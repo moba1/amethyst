@@ -1,13 +1,44 @@
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
+
+use super::scriptlet::Scriptlet;
+
+#[derive(Debug, Deserialize)]
+pub enum ImageType {
+    Scratch,
+    BaseImage(String),
+}
 
 #[derive(Debug, Deserialize)]
 pub struct Image {
     modules: Vec<super::module::Module>,
-    #[serde(default = "default_base_image")]
-    base_image: String,
+    #[serde(default = "default_base_image", deserialize_with = "deserialize_base_image")]
+    base_image: ImageType,
     name: String,
 }
 
-fn default_base_image() -> String {
-    "scratch".to_string()
+fn default_base_image() -> ImageType {
+    ImageType::Scratch
+}
+
+fn deserialize_base_image<'de, D>(deserializer: D) -> Result<ImageType, D::Error>
+    where D: Deserializer<'de>
+{
+    let image_type: Option<String> = Deserialize::deserialize(deserializer)?;
+    match image_type {
+        None => Ok(ImageType::Scratch),
+        Some(path) => Ok(ImageType::BaseImage(path)),
+    }
+}
+
+impl Image {
+    pub fn slurp_scriptlets(self) -> Result<Vec<super::scriptlet::Scriptlet>, Box<dyn std::error::Error>> {
+        let scriptlets =
+            self
+                .modules
+                .into_iter()
+                .map(|module| module.to_scriptlets())
+                .collect::<Result<Vec<_>, _>>()?
+                .concat();
+        Ok(scriptlets)
+    }
 }

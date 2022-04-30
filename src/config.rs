@@ -22,3 +22,9 @@ where
 
     Ok(toml::from_str(&raw_config)?)
 }
+
+impl Config {
+    pub fn images(self) -> Vec<image::Image> {
+        self.images
+    }
+}
