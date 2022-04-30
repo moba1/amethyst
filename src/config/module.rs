@@ -8,13 +8,12 @@ pub enum Module {
     Inline(super::scriptlet::Scriptlet),
 }
 
-#[derive(Debug, Deserialize)]
-struct Scriptlets {
-    scriptlets: Vec<super::scriptlet::Scriptlet>,
-}
-
 impl Module {
-    pub fn to_scriptlets(self) -> Result<Vec<super::scriptlet::Scriptlet>, Box<dyn std::error::Error>> {
+    pub fn to_scriptlets(self) -> Result<Vec<super::scriptlet::Scriptlet>, Box<dyn std::error::Error>> {        #[derive(Debug, Deserialize)]
+        struct Scriptlets {
+            scriptlets: Vec<super::scriptlet::Scriptlet>,
+        }
+
         match self {
             Self::File(path) => {
                 let raw_scriptlets = std::fs::read_to_string(path)?;
