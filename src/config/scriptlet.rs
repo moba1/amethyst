@@ -1,8 +1,8 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "type")]
 pub enum Scriptlet {
-    #[serde(rename(deserialize = "add"))]
+    #[serde(rename = "add")]
     Add { source: String, destination: String },
 }
