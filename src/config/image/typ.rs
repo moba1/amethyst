@@ -14,7 +14,7 @@ impl Serialize for ImageType {
     {
         let image_name = match self {
             ImageType::Scratch => "scratch",
-            ImageType::BaseImage(base_image) => &base_image,
+            ImageType::BaseImage(base_image) => base_image,
         };
         serializer.serialize_str(image_name)
     }
@@ -23,7 +23,7 @@ impl Serialize for ImageType {
 impl<'de> Deserialize<'de> for ImageType {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-            D: Deserializer<'de> 
+        D: Deserializer<'de>,
     {
         let image_type: Option<String> = Deserialize::deserialize(deserializer)?;
         match image_type {

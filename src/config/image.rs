@@ -1,27 +1,25 @@
-pub mod attribute;
+mod typ;
 
 use crate::result;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Clone)]
-pub struct Image {
-    modules: Vec<super::module::Module>,
-    #[serde(flatten)]
-    attribute: attribute::Attribute
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Image<Script> {
+    #[serde(rename(deserialize = "modules"))]
+    pub scripts: Vec<Script>,
+    pub base_image: typ::ImageType,
+    pub name: String,
 }
 
-impl Image {
-    pub fn slurp_scriptlets(self) -> result::Result<Vec<super::scriptlet::Scriptlet>> {
+impl Image<super::module::Module> {
+    pub fn slurp_scriptlets(&self) -> result::Result<Vec<super::scriptlet::Scriptlet>> {
         let scriptlets = self
-            .modules
+            .scripts
+            .clone()
             .into_iter()
             .map(|module| module.to_scriptlets())
             .collect::<Result<Vec<_>, _>>()?
             .concat();
         Ok(scriptlets)
-    }
-
-    pub fn attribute(self) -> attribute::Attribute {
-        self.attribute
     }
 }

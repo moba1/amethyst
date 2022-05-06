@@ -13,7 +13,7 @@ pub enum Module {
 }
 
 impl Module {
-    pub fn to_scriptlets(self) -> result::Result<Vec<crate::config::scriptlet::Scriptlet>> {
+    pub fn to_scriptlets(&self) -> result::Result<Vec<crate::config::scriptlet::Scriptlet>> {
         match self {
             Self::File(path) => {
                 let raw_scriptlets = match std::fs::read_to_string(&path) {
@@ -25,7 +25,7 @@ impl Module {
                     Err(err) => Err(scriptlet_load_error(path, Box::new(err))),
                 }
             }
-            Self::Inline(scriptlet) => Ok(vec![scriptlet]),
+            Self::Inline(scriptlet) => Ok(vec![scriptlet.clone()]),
         }
     }
 }

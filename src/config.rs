@@ -3,7 +3,7 @@ pub mod module;
 pub mod scriptlet;
 
 use crate::result;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer, Serialize};
 use std::convert;
 use std::error;
 use std::fmt;
@@ -11,16 +11,22 @@ use std::fs;
 use std::io::Read;
 use std::path;
 
-#[derive(Debug, Deserialize, Clone)]
-pub struct Config {
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Config<Script> {
     #[serde(rename = "image")]
-    images: Vec<image::Image>,
+    #[serde(deserialize_with = "deserialize_images")]
+    #[serde(bound(deserialize = "Script: Deserialize<'de>"))]
+    pub images: Vec<image::Image<Script>>,
 }
 
-impl Config {
-    pub fn images(self) -> Vec<image::Image> {
-        self.images
-    }
+fn deserialize_images<'de, Script, D>(
+    deserializer: D,
+) -> Result<Vec<image::Image<Script>>, D::Error>
+where
+    D: Deserializer<'de>,
+    Script: Deserialize<'de>,
+{
+    Deserialize::deserialize(deserializer)
 }
 
 #[derive(Debug)]
@@ -51,7 +57,7 @@ where
     })
 }
 
-pub fn load<Path>(config_directory: Path) -> result::Result<Config>
+fn load<Path>(config_directory: Path) -> result::Result<Config<module::Module>>
 where
     Path: convert::AsRef<std::path::Path>,
 {
@@ -66,7 +72,31 @@ where
     }
 
     match serde_yaml::from_str(&raw_config) {
-        Ok(config) => return Ok(config),
+        Ok(config) => Ok(config),
         Err(err) => Err(load_error(entrypoint, Box::new(err))),
     }
+}
+
+pub fn build<P>(config_directory: P) -> result::Result<Config<scriptlet::Scriptlet>>
+where
+    P: convert::AsRef<path::Path>,
+{
+    let config = match load(&config_directory) {
+        Ok(config) => config,
+        Err(err) => return Err(err),
+    };
+    let mut images = vec![];
+    for image in config.images {
+        let scriptlets = match image.slurp_scriptlets() {
+            Ok(scriptlets) => scriptlets,
+            Err(err) => return Err(err),
+        };
+        let image = image::Image {
+            scripts: scriptlets,
+            base_image: image.base_image,
+            name: image.name,
+        };
+        images.push(image);
+    }
+    Ok(Config { images })
 }
