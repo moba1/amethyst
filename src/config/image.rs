@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 pub struct Image<Script> {
     #[serde(rename(deserialize = "modules"))]
     pub scripts: Vec<Script>,
+    #[serde(default)]
     pub base_image: typ::ImageType,
     pub name: String,
     pub tag: String,
