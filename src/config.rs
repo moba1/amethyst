@@ -95,6 +95,7 @@ where
             scripts: scriptlets,
             base_image: image.base_image,
             name: image.name,
+            tag: image.tag,
         };
         images.push(image);
     }

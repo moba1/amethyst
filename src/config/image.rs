@@ -9,6 +9,7 @@ pub struct Image<Script> {
     pub scripts: Vec<Script>,
     pub base_image: typ::ImageType,
     pub name: String,
+    pub tag: String,
 }
 
 impl Image<super::module::Module> {

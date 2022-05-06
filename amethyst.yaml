@@ -1,5 +1,6 @@
 image:
   - name: ubuntu
+    tag: tag
     base_image: ubuntu:22.04
     modules:
       - "./test.yaml"
