@@ -1,0 +1,6 @@
+- type: add
+  source: ./a
+  destination: ./b
+- type: add
+  source: ./c
+  destination: ./d

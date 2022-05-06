@@ -14,22 +14,16 @@ pub enum Module {
 
 impl Module {
     pub fn to_scriptlets(self) -> result::Result<Vec<crate::config::scriptlet::Scriptlet>> {
-        #[derive(Debug, Deserialize)]
-        struct Scriptlets {
-            scriptlets: Vec<super::scriptlet::Scriptlet>,
-        }
-
         match self {
             Self::File(path) => {
                 let raw_scriptlets = match std::fs::read_to_string(&path) {
                     Ok(raw_scriptlets) => raw_scriptlets,
                     Err(err) => return Err(scriptlet_load_error(path, Box::new(err))),
                 };
-                let scriptlets: Scriptlets = match toml::from_str(&raw_scriptlets) {
-                    Ok(scriptlets) => scriptlets,
-                    Err(err) => return Err(scriptlet_load_error(path, Box::new(err))),
-                };
-                Ok(scriptlets.scriptlets)
+                match serde_yaml::from_str::<Vec<super::scriptlet::Scriptlet>>(&raw_scriptlets) {
+                    Ok(scriptlets) => Ok(scriptlets),
+                    Err(err) => Err(scriptlet_load_error(path, Box::new(err))),
+                }
             }
             Self::Inline(scriptlet) => Ok(vec![scriptlet]),
         }

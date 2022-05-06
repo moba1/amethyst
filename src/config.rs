@@ -55,7 +55,7 @@ pub fn load<Path>(config_directory: Path) -> result::Result<Config>
 where
     Path: convert::AsRef<std::path::Path>,
 {
-    let entrypoint = config_directory.as_ref().join("amethyst.toml");
+    let entrypoint = config_directory.as_ref().join("amethyst.yaml");
     let mut file = match fs::File::open(&entrypoint) {
         Ok(file) => file,
         Err(err) => return Err(load_error(entrypoint, Box::new(err))),
@@ -65,7 +65,7 @@ where
         return Err(load_error(entrypoint, Box::new(err)));
     }
 
-    match toml::from_str(&raw_config) {
+    match serde_yaml::from_str(&raw_config) {
         Ok(config) => return Ok(config),
         Err(err) => Err(load_error(entrypoint, Box::new(err))),
     }

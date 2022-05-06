@@ -1,0 +1,8 @@
+image:
+  - name: ubuntu
+    base_image: ubuntu:22.04
+    modules:
+      - "./test.yaml"
+      - type: add
+        source: ./source
+        destination: ./destination
