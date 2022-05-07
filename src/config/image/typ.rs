@@ -153,7 +153,8 @@ name: {}
         );
         assert_eq!(
             serialized_string,
-            serde_yaml::to_string(&image_type).unwrap_or_else(|_| { panic!("{}", serialized_string) })
+            serde_yaml::to_string(&image_type)
+                .unwrap_or_else(|_| { panic!("{}", serialized_string) })
         );
 
         let name = "base_image_name".to_string();
@@ -217,12 +218,15 @@ name: {}
         );
         let image_type = super::ImageType::BaseImage {
             name: name.clone(),
-            tag: "latest".to_string(),
+            tag: super::tag::LATEST_TAG.to_string(),
         };
         assert_eq!(
             image_type,
-            serde_yaml::from_str(original_string.as_str())
-                .unwrap_or_else(|_| panic!("non scratch image (base: {}, tag: latest)", name))
+            serde_yaml::from_str(original_string.as_str()).unwrap_or_else(|_| panic!(
+                "non scratch image (base: {}, tag: {})",
+                name,
+                super::tag::LATEST_TAG
+            ))
         )
     }
 }
