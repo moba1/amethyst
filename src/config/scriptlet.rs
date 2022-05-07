@@ -27,8 +27,10 @@ destination: {}
         );
         assert_eq!(
             serialized_string,
-            serde_yaml::to_string(&scriptlet).unwrap_or_else(|_| panic!("add type (source: {}, destination: {})",
-                    source, destination))
+            serde_yaml::to_string(&scriptlet).unwrap_or_else(|_| panic!(
+                "add type (source: {}, destination: {})",
+                source, destination
+            ))
         );
     }
 
@@ -45,8 +47,10 @@ destination: {}
                 source: source.to_string(),
                 destination: destination.to_string(),
             },
-            serde_yaml::from_str(original_string.as_str()).unwrap_or_else(|_| panic!("add type (source: {}, destination: {})",
-                    source, destination))
+            serde_yaml::from_str(original_string.as_str()).unwrap_or_else(|_| panic!(
+                "add type (source: {}, destination: {})",
+                source, destination
+            ))
         );
     }
 }
