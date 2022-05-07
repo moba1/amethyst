@@ -44,7 +44,10 @@ impl<'de> Deserialize<'de> for ImageType {
                         match v {
                             NAME_ATTRIBUTE_NAME => Ok(Field::Name),
                             TAG_ATTRIBUTE_NAME => Ok(Field::Tag),
-                            _ => Err(de::Error::unknown_field(v, &[NAME_ATTRIBUTE_NAME, TAG_ATTRIBUTE_NAME])),
+                            _ => Err(de::Error::unknown_field(
+                                v,
+                                &[NAME_ATTRIBUTE_NAME, TAG_ATTRIBUTE_NAME],
+                            )),
                         }
                     }
                 }
@@ -142,12 +145,15 @@ mod tests {
     #[test]
     fn test_serialize() {
         let image_type = super::ImageType::Scratch;
-        let serialized_string = r#"---
-name: scratch
-"#;
+        let serialized_string = format!(
+            r#"---
+name: {}
+"#,
+            super::SCRATCH_IMAGE_NAME
+        );
         assert_eq!(
             serialized_string.to_string(),
-            serde_yaml::to_string(&image_type).expect(serialized_string)
+            serde_yaml::to_string(&image_type).expect(serialized_string.as_str())
         );
 
         let name = "base_image_name".to_string();
@@ -165,19 +171,23 @@ tag: {}
         );
         assert_eq!(
             serialize_string,
-            serde_yaml::to_string(&image_type).unwrap_or_else(|_| { panic!("{}", serialize_string) })
+            serde_yaml::to_string(&image_type)
+                .unwrap_or_else(|_| { panic!("{}", serialize_string) })
         );
     }
 
     #[test]
     fn test_deserialize() {
-        let original_string = r#"---
-name: scratch
-"#;
+        let original_string = format!(
+            r#"---
+name: {}
+"#,
+            super::SCRATCH_IMAGE_NAME
+        );
         let image_type = super::ImageType::Scratch;
         assert_eq!(
             image_type,
-            serde_yaml::from_str(original_string).expect("scratch image")
+            serde_yaml::from_str(original_string.as_str()).expect("scratch image")
         );
 
         let name = "base_image_name".to_string();
