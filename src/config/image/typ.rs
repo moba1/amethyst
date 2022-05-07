@@ -1,6 +1,8 @@
 use serde::{de, ser::SerializeStruct, Deserialize, Serialize};
 use std::default;
 
+use super::tag;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum ImageType {
     Scratch,
@@ -87,7 +89,7 @@ impl<'de> Deserialize<'de> for ImageType {
                     SCRATCH_IMAGE_NAME => return Ok(ImageType::Scratch),
                     image => image.to_string(),
                 };
-                let tag = tag.unwrap_or_else(|| "latest".to_string());
+                let tag = tag.unwrap_or_else(|| tag::LATEST_TAG.to_string());
                 Ok(ImageType::BaseImage { name, tag })
             }
         }

@@ -1,3 +1,4 @@
+mod tag;
 mod typ;
 
 use crate::result;
@@ -42,5 +43,5 @@ where
 }
 
 fn default_tag() -> String {
-    "latest".to_string()
+    tag::LATEST_TAG.to_string()
 }
