@@ -11,6 +11,7 @@ pub struct Image<Script> {
     pub base_image: typ::ImageType,
     #[serde(deserialize_with = "deserialize_image_name")]
     pub name: String,
+    #[serde(default = "default_tag")]
     pub tag: String,
 }
 
@@ -39,4 +40,8 @@ where
         ));
     }
     Ok(image_name)
+}
+
+fn default_tag() -> String {
+    "latest".to_string()
 }
