@@ -152,8 +152,8 @@ name: {}
             super::SCRATCH_IMAGE_NAME
         );
         assert_eq!(
-            serialized_string.to_string(),
-            serde_yaml::to_string(&image_type).expect(serialized_string.as_str())
+            serialized_string,
+            serde_yaml::to_string(&image_type).unwrap_or_else(|_| { panic!("{}", serialized_string) })
         );
 
         let name = "base_image_name".to_string();

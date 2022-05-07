@@ -1,1 +1,1 @@
-pub const LATEST_TAG: &'static str = "latest";
+pub const LATEST_TAG: &str = "latest";
