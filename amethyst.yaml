@@ -4,7 +4,7 @@ image:
     base_image:
       name: ubuntu
       tag: 22.04
-    modules:
+    scripts:
       - "./test.yaml"
       - type: add
         source: ./source

@@ -5,7 +5,6 @@ use serde::{de, Deserialize, Deserializer, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Image<Script> {
-    #[serde(rename(deserialize = "modules"))]
     pub scripts: Vec<Script>,
     #[serde(default)]
     pub base_image: typ::ImageType,
