@@ -1,28 +1,31 @@
-use serde::{Deserialize, Serialize, de, ser::SerializeStruct};
+use serde::{de, ser::SerializeStruct, Deserialize, Serialize};
 use std::default;
 
 #[derive(Debug, Clone)]
 pub enum ImageType {
     Scratch,
-    BaseImage {
-        name: String,
-        tag: String,
-    }
+    BaseImage { name: String, tag: String },
 }
 
-const NAME_ATTRIBUTE_NAME: &'static str = "name";
-const TAG_ATTRIBUTE_NAME: &'static str = "tag";
+const NAME_ATTRIBUTE_NAME: &str = "name";
+const TAG_ATTRIBUTE_NAME: &str = "tag";
+pub const SCRATCH_IMAGE_NAME: &str = "scratch";
 
 impl<'de> Deserialize<'de> for ImageType {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-            D: serde::Deserializer<'de> {
+        D: serde::Deserializer<'de>,
+    {
         #[derive(Debug)]
-        enum Field { Name, Tag }
+        enum Field {
+            Name,
+            Tag,
+        }
         impl<'de> Deserialize<'de> for Field {
             fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
             where
-                    D: serde::Deserializer<'de> {
+                D: serde::Deserializer<'de>,
+            {
                 struct FieldVisitor;
 
                 impl<'de> de::Visitor<'de> for FieldVisitor {
@@ -34,11 +37,12 @@ impl<'de> Deserialize<'de> for ImageType {
 
                     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
                     where
-                            E: de::Error, {
+                        E: de::Error,
+                    {
                         match v {
                             NAME_ATTRIBUTE_NAME => Ok(Field::Name),
                             TAG_ATTRIBUTE_NAME => Ok(Field::Tag),
-                            _ => Err(de::Error::unknown_field(v, &["name", "tag"]))
+                            _ => Err(de::Error::unknown_field(v, &["name", "tag"])),
                         }
                     }
                 }
@@ -57,7 +61,8 @@ impl<'de> Deserialize<'de> for ImageType {
 
             fn visit_map<A>(self, mut map: A) -> Result<ImageType, A::Error>
             where
-                    A: de::MapAccess<'de>, {
+                A: de::MapAccess<'de>,
+            {
                 let mut name = None;
                 let mut tag = None;
 
@@ -65,13 +70,13 @@ impl<'de> Deserialize<'de> for ImageType {
                     match key {
                         Field::Name => {
                             if name.is_some() {
-                                return Err(de::Error::duplicate_field(NAME_ATTRIBUTE_NAME))
+                                return Err(de::Error::duplicate_field(NAME_ATTRIBUTE_NAME));
                             }
                             name = map.next_value::<Option<String>>()?;
                         }
                         Field::Tag => {
                             if tag.is_some() {
-                                return Err(de::Error::duplicate_field(TAG_ATTRIBUTE_NAME))
+                                return Err(de::Error::duplicate_field(TAG_ATTRIBUTE_NAME));
                             }
                             tag = map.next_value::<Option<String>>()?;
                         }
@@ -79,7 +84,7 @@ impl<'de> Deserialize<'de> for ImageType {
                 }
                 let name = name.ok_or_else(|| de::Error::missing_field(NAME_ATTRIBUTE_NAME))?;
                 let name = match name.as_str() {
-                    "scratch" => return Ok(ImageType::Scratch),
+                    SCRATCH_IMAGE_NAME => return Ok(ImageType::Scratch),
                     image => image.to_string(),
                 };
                 let tag = tag.unwrap_or_else(|| "latest".to_string());
@@ -87,18 +92,23 @@ impl<'de> Deserialize<'de> for ImageType {
             }
         }
 
-        deserializer.deserialize_struct("ImageType", &[NAME_ATTRIBUTE_NAME, TAG_ATTRIBUTE_NAME], ImageTypeVisitor)
+        deserializer.deserialize_struct(
+            "ImageType",
+            &[NAME_ATTRIBUTE_NAME, TAG_ATTRIBUTE_NAME],
+            ImageTypeVisitor,
+        )
     }
 }
 
 impl Serialize for ImageType {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-            S: serde::Serializer {
+        S: serde::Serializer,
+    {
         match self {
             ImageType::Scratch => {
                 let mut state = serializer.serialize_struct("ImageType", 1)?;
-                state.serialize_field(NAME_ATTRIBUTE_NAME, "scratch")?;
+                state.serialize_field(NAME_ATTRIBUTE_NAME, SCRATCH_IMAGE_NAME)?;
                 state.end()
             }
             ImageType::BaseImage { name, tag } => {

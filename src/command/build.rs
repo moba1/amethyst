@@ -10,7 +10,7 @@ where
     let config = config::build(config_directory)?;
     match serde_yaml::to_string(&config) {
         Ok(config) => println!("{}", config),
-        Err(err) => eprintln!("error occured: {:?}", err),
+        Err(err) => eprintln!("error occured: {}", err),
     }
     Ok(())
 }

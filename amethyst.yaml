@@ -1,5 +1,5 @@
 image:
-  - name: ubuntu
+  - name: name
     tag: tag
     base_image:
       name: ubuntu
