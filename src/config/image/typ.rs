@@ -1,7 +1,9 @@
 use serde::{de, ser::SerializeStruct, Deserialize, Serialize};
 use std::default;
 
-#[derive(Debug, Clone)]
+use super::tag;
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum ImageType {
     Scratch,
     BaseImage { name: String, tag: String },
@@ -42,7 +44,10 @@ impl<'de> Deserialize<'de> for ImageType {
                         match v {
                             NAME_ATTRIBUTE_NAME => Ok(Field::Name),
                             TAG_ATTRIBUTE_NAME => Ok(Field::Tag),
-                            _ => Err(de::Error::unknown_field(v, &["name", "tag"])),
+                            _ => Err(de::Error::unknown_field(
+                                v,
+                                &[NAME_ATTRIBUTE_NAME, TAG_ATTRIBUTE_NAME],
+                            )),
                         }
                     }
                 }
@@ -87,7 +92,7 @@ impl<'de> Deserialize<'de> for ImageType {
                     SCRATCH_IMAGE_NAME => return Ok(ImageType::Scratch),
                     image => image.to_string(),
                 };
-                let tag = tag.unwrap_or_else(|| "latest".to_string());
+                let tag = tag.unwrap_or_else(|| tag::LATEST_TAG.to_string());
                 Ok(ImageType::BaseImage { name, tag })
             }
         }
@@ -124,5 +129,100 @@ impl Serialize for ImageType {
 impl default::Default for ImageType {
     fn default() -> Self {
         Self::Scratch
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::default;
+
+    #[test]
+    fn test_default_value() {
+        let default_value: super::ImageType = default::Default::default();
+        assert_eq!(default_value, super::ImageType::Scratch);
+    }
+
+    #[test]
+    fn test_serialize() {
+        let image_type = super::ImageType::Scratch;
+        let serialized_string = format!(
+            r#"---
+name: {}
+"#,
+            super::SCRATCH_IMAGE_NAME
+        );
+        assert_eq!(
+            serialized_string.to_string(),
+            serde_yaml::to_string(&image_type).expect(serialized_string.as_str())
+        );
+
+        let name = "base_image_name".to_string();
+        let tag = "tag".to_string();
+        let image_type = super::ImageType::BaseImage {
+            name: name.clone(),
+            tag: tag.clone(),
+        };
+        let serialize_string = format!(
+            r#"---
+name: {}
+tag: {}
+"#,
+            name, tag
+        );
+        assert_eq!(
+            serialize_string,
+            serde_yaml::to_string(&image_type)
+                .unwrap_or_else(|_| { panic!("{}", serialize_string) })
+        );
+    }
+
+    #[test]
+    fn test_deserialize() {
+        let original_string = format!(
+            r#"---
+name: {}
+"#,
+            super::SCRATCH_IMAGE_NAME
+        );
+        let image_type = super::ImageType::Scratch;
+        assert_eq!(
+            image_type,
+            serde_yaml::from_str(original_string.as_str()).expect("scratch image")
+        );
+
+        let name = "base_image_name".to_string();
+        let tag = "tag".to_string();
+        let image_type = super::ImageType::BaseImage {
+            name: name.clone(),
+            tag: tag.clone(),
+        };
+        let original_string = format!(
+            r#"---
+name: {}
+tag: {}
+"#,
+            name, tag
+        );
+        assert_eq!(
+            image_type,
+            serde_yaml::from_str(original_string.as_str())
+                .unwrap_or_else(|_| panic!("non scratch image (base: {}, tag: {})", name, tag))
+        );
+
+        let original_string = format!(
+            r#"---
+name: {}
+"#,
+            name,
+        );
+        let image_type = super::ImageType::BaseImage {
+            name: name.clone(),
+            tag: "latest".to_string(),
+        };
+        assert_eq!(
+            image_type,
+            serde_yaml::from_str(original_string.as_str())
+                .unwrap_or_else(|_| panic!("non scratch image (base: {}, tag: latest)", name))
+        )
     }
 }
