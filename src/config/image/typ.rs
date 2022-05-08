@@ -3,7 +3,7 @@ use std::default;
 
 use super::tag;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[cfg_attr(test, derive(PartialEq))]
 pub enum ImageType {
     Scratch,

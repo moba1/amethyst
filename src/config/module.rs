@@ -5,7 +5,7 @@ use std::error;
 use std::fmt;
 use std::path;
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub enum Module {
     File(String),

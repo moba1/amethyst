@@ -11,7 +11,7 @@ use std::fs;
 use std::io::Read;
 use std::path;
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Config<Script> {
     #[serde(rename = "image")]
     #[serde(deserialize_with = "deserialize_images")]

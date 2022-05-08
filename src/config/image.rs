@@ -4,7 +4,7 @@ mod typ;
 use crate::result;
 use serde::{de, Deserialize, Deserializer, Serialize};
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Image<Script> {
     pub scripts: Vec<Script>,
     #[serde(default)]
@@ -17,9 +17,7 @@ pub struct Image<Script> {
 
 impl Image<super::module::Module> {
     pub fn slurp_scriptlets(&self) -> result::Result<Vec<super::scriptlet::Scriptlet>> {
-        let scriptlets = self
-            .scripts
-            .clone()
+        let scriptlets = (&self.scripts)
             .into_iter()
             .map(|module| module.to_scriptlets())
             .collect::<Result<Vec<_>, _>>()?
