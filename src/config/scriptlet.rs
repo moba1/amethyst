@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
+#[cfg_attr(test, derive(PartialEq))]
 #[serde(tag = "type")]
 pub enum Scriptlet {
     #[serde(rename = "add")]
