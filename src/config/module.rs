@@ -124,7 +124,7 @@ mod tests {
 
             #[test]
             fn unloadable() {
-                let module_file = tempfile::NamedTempFile::new().expect("temporary file created");
+                let module_file = tempfile::NamedTempFile::new().expect("temporary module file");
                 let reserved_file_path = module_file
                     .path()
                     .join("abcd")
@@ -132,6 +132,17 @@ mod tests {
                     .to_string();
 
                 assert!(Module::File(reserved_file_path).to_scriptlets().is_err());
+            }
+
+            #[test]
+            fn cannot_deserialize_scriptlets_from_file() {
+                let mut non_module_file =
+                    tempfile::NamedTempFile::new().expect("temporary module file");
+
+                write!(non_module_file, "non scriptlets string").unwrap();
+
+                let non_module_file_path = non_module_file.path().to_string_lossy().to_string();
+                assert!(Module::File(non_module_file_path).to_scriptlets().is_err());
             }
         }
 
