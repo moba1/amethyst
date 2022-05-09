@@ -7,6 +7,7 @@ use std::path;
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
+#[cfg_attr(test, derive(PartialEq))]
 pub enum Module {
     File(String),
     Inline(super::scriptlet::Scriptlet),
@@ -161,5 +162,33 @@ mod tests {
     }
 
     #[test]
-    fn test_deserialize() {}
+    fn test_deserialize() {
+        let original_string = "test";
+        let deserialized_module = serde_yaml::from_str::<super::Module>(original_string);
+        assert!(deserialized_module.is_ok());
+        assert_eq!(
+            deserialized_module.unwrap(),
+            super::Module::File(original_string.to_string())
+        );
+
+        let source_path = "source_file";
+        let destination_path = "destination_file";
+        let original_string = format!(
+            r#"
+type: add
+source: {}
+destination: {}
+"#,
+            source_path, destination_path,
+        );
+        let deserialized_module = serde_yaml::from_str::<super::Module>(&original_string);
+        assert!(deserialized_module.is_ok());
+        assert_eq!(
+            deserialized_module.unwrap(),
+            super::Module::Inline(scriptlet::Scriptlet::Add {
+                source: source_path.to_string(),
+                destination: destination_path.to_string(),
+            })
+        );
+    }
 }
