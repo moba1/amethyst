@@ -11,7 +11,10 @@ use std::fs;
 use std::io::Read;
 use std::path;
 
+const CONFIG_FILE_NAME: &'static str = "amethyst.yaml";
+
 #[derive(Debug, Deserialize, Serialize)]
+#[cfg_attr(test, derive(PartialEq))]
 pub struct Config<Script> {
     #[serde(rename = "image")]
     #[serde(deserialize_with = "deserialize_images")]
@@ -61,7 +64,7 @@ fn load<Path>(config_directory: Path) -> result::Result<Config<module::Module>>
 where
     Path: convert::AsRef<std::path::Path>,
 {
-    let entrypoint = config_directory.as_ref().join("amethyst.yaml");
+    let entrypoint = config_directory.as_ref().join(CONFIG_FILE_NAME);
     let mut file = match fs::File::open(&entrypoint) {
         Ok(file) => file,
         Err(err) => return Err(load_error(entrypoint, Box::new(err))),
@@ -100,4 +103,130 @@ where
         images.push(image);
     }
     Ok(Config { images })
+}
+
+#[cfg(test)]
+mod tests {
+    mod load_error_function {
+        use super::super::load_error;
+        use std::error;
+        use std::fmt;
+
+        #[test]
+        fn create_load_error() {
+            const ORIGINAL_ERROR_MESSAGE: &str = "original error";
+            #[derive(Debug)]
+            struct OriginalError;
+            impl fmt::Display for OriginalError {
+                fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                    write!(f, "{}", ORIGINAL_ERROR_MESSAGE)
+                }
+            }
+            impl error::Error for OriginalError {}
+
+            const PATH: &str = "./";
+            const ORIGINAL_ERROR: OriginalError = OriginalError;
+
+            assert_eq!(
+                format!(
+                    "cannot load configuration file: {:?} [{}]",
+                    PATH, ORIGINAL_ERROR
+                ),
+                format!("{}", load_error(PATH, Box::new(ORIGINAL_ERROR))),
+            );
+        }
+    }
+
+    mod load_function {
+        use std::fs;
+        use std::io::Write;
+
+        use super::super::image::{self, typ};
+        use super::super::module;
+        use super::super::{load, Config, CONFIG_FILE_NAME};
+        use crate::result;
+
+        #[test]
+        fn cannot_load_non_existence_config_file() {
+            let reserved_file = tempfile::NamedTempFile::new().expect("reserved file");
+
+            assert!(load(reserved_file.path()).is_err());
+        }
+
+        #[test]
+        fn cannot_load_non_config_file() {
+            let config_directory = tempfile::tempdir().expect("config directory");
+            let config_file_path = config_directory.path().join(CONFIG_FILE_NAME);
+            let eval = || -> result::Result<Config<module::Module>> {
+                let mut config_file =
+                    fs::File::create(config_file_path.clone()).expect("config file");
+
+                write!(config_file, "non config file")?;
+
+                load(config_directory)
+            };
+
+            assert!(eval().is_err());
+        }
+
+        #[test]
+        fn load_config_file() {
+            let config_directory = tempfile::tempdir().expect("config directory");
+            let config_file_path = config_directory.path().join(CONFIG_FILE_NAME);
+            let base_image_name = typ::SCRATCH_IMAGE_NAME;
+            let image1_name = "image1";
+            let image1_tag = "0.1";
+            let image2_name = "image2";
+            let image2_tag = "0.2";
+            let eval = || -> result::Result<Config<module::Module>> {
+                let mut config_file =
+                    fs::File::create(config_file_path.clone()).expect("config file");
+                let config = format!(
+                    r#"
+                    image:
+                      - name: {}
+                        base_image:
+                          name: {}
+                        scripts: []
+                        tag: {}
+                      - name: {}
+                        base_image:
+                          name: {}
+                        scripts: []
+                        tag: {}
+                    "#,
+                    image1_name,
+                    base_image_name,
+                    image1_tag,
+                    image2_name,
+                    base_image_name,
+                    image2_tag,
+                );
+                write!(config_file, "{}", config)?;
+
+                load(config_directory)
+            };
+
+            let original_config: Config<module::Module> = Config {
+                images: vec![
+                    image::Image {
+                        name: image1_name.to_string(),
+                        base_image: typ::ImageType::Scratch,
+                        tag: image1_tag.to_string(),
+                        scripts: vec![],
+                    },
+                    image::Image {
+                        name: image2_name.to_string(),
+                        base_image: typ::ImageType::Scratch,
+                        tag: image2_tag.to_string(),
+                        scripts: vec![],
+                    },
+                ],
+            };
+            let loaded_config = eval();
+
+            assert!(loaded_config.is_ok());
+            assert_eq!(loaded_config.unwrap(), original_config);
+        }
+    }
 }
