@@ -1,5 +1,5 @@
-mod tag;
-mod typ;
+pub mod tag;
+pub mod typ;
 
 use crate::result;
 use serde::{de, Deserialize, Deserializer, Serialize};
