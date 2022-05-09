@@ -1,0 +1,15 @@
+image:
+  - name: "image1"
+    scripts:
+      - ./scriptlet.yaml
+    tag: "22.04"
+    base_image:
+      name: scrach
+  - name: "image2"
+    scripts:
+      - type: "add"
+        source: ./source-file
+        destination: /destination-file
+    base_image:
+      name: "amethyst"
+      tag: "22.04"
