@@ -146,17 +146,15 @@ mod tests {
     #[test]
     fn test_serialize() {
         let image_type = super::ImageType::Scratch;
-        let serialized_string = format!(
+        let expected_string = format!(
             r#"---
 name: {}
 "#,
             super::SCRATCH_IMAGE_NAME
         );
-        assert_eq!(
-            serialized_string,
-            serde_yaml::to_string(&image_type)
-                .unwrap_or_else(|_| { panic!("{}", serialized_string) })
-        );
+        let serialized_string = serde_yaml::to_string(&image_type);
+        assert!(serialized_string.is_ok());
+        assert_eq!(expected_string, serialized_string.unwrap());
 
         let name = "base_image_name".to_string();
         let tag = "tag".to_string();
@@ -164,18 +162,16 @@ name: {}
             name: name.clone(),
             tag: tag.clone(),
         };
-        let serialize_string = format!(
+        let expected_string = format!(
             r#"---
 name: {}
 tag: {}
 "#,
             name, tag
         );
-        assert_eq!(
-            serialize_string,
-            serde_yaml::to_string(&image_type)
-                .unwrap_or_else(|_| { panic!("{}", serialize_string) })
-        );
+        let serialized_string = serde_yaml::to_string(&image_type);
+        assert!(serialized_string.is_ok());
+        assert_eq!(expected_string, serialized_string.unwrap(),);
     }
 
     #[test]

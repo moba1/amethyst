@@ -18,7 +18,7 @@ mod tests {
             source: source.to_string(),
             destination: destination.to_string(),
         };
-        let serialized_string = format!(
+        let expected_string = format!(
             r#"---
 type: add
 source: {}
@@ -26,13 +26,9 @@ destination: {}
 "#,
             source, destination
         );
-        assert_eq!(
-            serialized_string,
-            serde_yaml::to_string(&scriptlet).unwrap_or_else(|_| panic!(
-                "add type (source: {}, destination: {})",
-                source, destination
-            ))
-        );
+        let serialized_string = serde_yaml::to_string(&scriptlet);
+        assert!(serialized_string.is_ok());
+        assert_eq!(expected_string, serialized_string.unwrap(),);
     }
 
     #[test]

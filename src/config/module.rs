@@ -159,4 +159,7 @@ mod tests {
         assert!(parsed_scriptlets.is_ok());
         assert_eq!(parsed_scriptlets.unwrap(), vec![original_scriptlet]);
     }
+
+    #[test]
+    fn test_deserialize() {}
 }
