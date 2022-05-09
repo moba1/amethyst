@@ -148,19 +148,18 @@ mod tests {
         use crate::result;
 
         #[test]
-        fn cannot_load_non_existence_config_file() {
+        fn cannot_load_config_since_config_file_not_exist() {
             let reserved_file = tempfile::NamedTempFile::new().expect("reserved file");
 
             assert!(load(reserved_file.path()).is_err());
         }
 
         #[test]
-        fn cannot_load_non_config_file() {
+        fn cannot_load_config_from_non_config_file() {
             let config_directory = tempfile::tempdir().expect("config directory");
             let config_file_path = config_directory.path().join(CONFIG_FILE_NAME);
             let eval = || -> result::Result<Config<module::Module>> {
-                let mut config_file =
-                    fs::File::create(config_file_path.clone()).expect("config file");
+                let mut config_file = fs::File::create(config_file_path.clone())?;
 
                 write!(config_file, "non config file")?;
 
@@ -191,7 +190,7 @@ mod tests {
                         base_image:
                           name: {}
                         scripts: []
-                        tag: {}
+                        tag: {:?}
                       - name: {}
                         base_image:
                           name: {}
@@ -199,7 +198,7 @@ mod tests {
                           - type: add
                             source: {}
                             destination: {}
-                        tag: {}
+                        tag: {:?}
                     "#,
                     image1_name,
                     base_image_name,
@@ -238,6 +237,103 @@ mod tests {
 
             assert!(loaded_config.is_ok());
             assert_eq!(loaded_config.unwrap(), original_config);
+        }
+    }
+
+    mod build_function {
+        use std::fs;
+        use std::io::Write;
+
+        use super::super::image::{self, typ};
+        use super::super::{build, Config, CONFIG_FILE_NAME};
+        use crate::config::image::tag;
+        use crate::config::scriptlet;
+        use crate::result;
+
+        #[test]
+        fn cannot_build_config_since_config_file_not_exist() {
+            let reserved_file = tempfile::NamedTempFile::new().expect("reserved file");
+
+            assert!(build(reserved_file.path()).is_err());
+        }
+
+        #[test]
+        fn cannot_build_config_from_non_config_file() {
+            let config_directory = tempfile::tempdir().expect("config directory");
+            let config_file_path = config_directory.path().join(CONFIG_FILE_NAME);
+            let eval = || -> result::Result<Config<scriptlet::Scriptlet>> {
+                let mut config_file = fs::File::create(config_file_path.clone())?;
+
+                write!(config_file, "non config file")?;
+
+                build(config_directory)
+            };
+
+            assert!(eval().is_err());
+        }
+
+        #[test]
+        fn build_config_from_config_file() {
+            let config_directory = tempfile::tempdir().expect("config directory");
+            let add_scriptlet_source = "source";
+            let add_scriptlet_destination = "destination";
+            let base_image_name = "base_image";
+            let image_name = "image";
+            let image_tag = "0.1";
+            let module_file_path = config_directory.path().join("scriptlet.yaml");
+            let config_file_path = config_directory.path().join("amethyst.yaml");
+
+            let eval = || -> result::Result<Config<scriptlet::Scriptlet>> {
+                let mut module_file = fs::File::create(&module_file_path)?;
+                let module_file_content = format!(
+                    r#"
+                    - type: add
+                      source: {}
+                      destination: {}
+                    "#,
+                    add_scriptlet_source, add_scriptlet_destination
+                );
+                write!(module_file, "{}", module_file_content)?;
+
+                let config_file_content = format!(
+                    r#"
+                image:
+                  - base_image:
+                      name: {}
+                    name: {}
+                    scripts:
+                      - {}
+                    tag: {:?}
+                "#,
+                    base_image_name,
+                    image_name,
+                    module_file_path.to_string_lossy(),
+                    image_tag
+                );
+                let mut config_file = fs::File::create(config_file_path)?;
+
+                write!(config_file, "{}", config_file_content)?;
+
+                build(config_directory.path())
+            };
+            let built_config = eval();
+            let original_config = Config {
+                images: vec![image::Image {
+                    name: image_name.to_string(),
+                    tag: image_tag.to_string(),
+                    base_image: typ::ImageType::BaseImage {
+                        name: base_image_name.to_string(),
+                        tag: tag::LATEST_TAG.to_string(),
+                    },
+                    scripts: vec![scriptlet::Scriptlet::Add {
+                        source: add_scriptlet_source.to_string(),
+                        destination: add_scriptlet_destination.to_string(),
+                    }],
+                }],
+            };
+
+            assert!(built_config.is_ok());
+            assert_eq!(built_config.unwrap(), original_config);
         }
     }
 }
