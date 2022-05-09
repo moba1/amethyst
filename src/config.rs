@@ -144,6 +144,7 @@ mod tests {
         use super::super::image::{self, typ};
         use super::super::module;
         use super::super::{load, Config, CONFIG_FILE_NAME};
+        use crate::config::scriptlet;
         use crate::result;
 
         #[test]
@@ -178,6 +179,8 @@ mod tests {
             let image1_tag = "0.1";
             let image2_name = "image2";
             let image2_tag = "0.2";
+            let image2_scriptlet_source = "source";
+            let image2_scriptlet_destination = "destination";
             let eval = || -> result::Result<Config<module::Module>> {
                 let mut config_file =
                     fs::File::create(config_file_path.clone()).expect("config file");
@@ -192,7 +195,10 @@ mod tests {
                       - name: {}
                         base_image:
                           name: {}
-                        scripts: []
+                        scripts:
+                          - type: add
+                            source: {}
+                            destination: {}
                         tag: {}
                     "#,
                     image1_name,
@@ -200,6 +206,8 @@ mod tests {
                     image1_tag,
                     image2_name,
                     base_image_name,
+                    image2_scriptlet_source,
+                    image2_scriptlet_destination,
                     image2_tag,
                 );
                 write!(config_file, "{}", config)?;
@@ -219,7 +227,10 @@ mod tests {
                         name: image2_name.to_string(),
                         base_image: typ::ImageType::Scratch,
                         tag: image2_tag.to_string(),
-                        scripts: vec![],
+                        scripts: vec![module::Module::Inline(scriptlet::Scriptlet::Add {
+                            source: image2_scriptlet_source.to_string(),
+                            destination: image2_scriptlet_destination.to_string(),
+                        })],
                     },
                 ],
             };
