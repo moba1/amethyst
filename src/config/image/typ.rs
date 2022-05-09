@@ -138,92 +138,112 @@ mod tests {
     use std::default;
 
     #[test]
-    fn test_default_value() {
+    fn default_value_is_scratch() {
         let default_value: super::ImageType = default::Default::default();
+
         assert_eq!(default_value, super::ImageType::Scratch);
     }
 
-    #[test]
-    fn test_serialize() {
-        let image_type = super::ImageType::Scratch;
-        let expected_string = format!(
-            r#"---
+    mod serializability {
+        mod serializable {
+            use super::super::super::{ImageType, SCRATCH_IMAGE_NAME};
+
+            #[test]
+            fn scrach_image() {
+                let image_type = ImageType::Scratch;
+                let expected_string = format!(
+                    r#"---
 name: {}
 "#,
-            super::SCRATCH_IMAGE_NAME
-        );
-        let serialized_string = serde_yaml::to_string(&image_type);
-        assert!(serialized_string.is_ok());
-        assert_eq!(expected_string, serialized_string.unwrap());
+                    SCRATCH_IMAGE_NAME
+                );
+                let serialized_string = serde_yaml::to_string(&image_type);
 
-        let name = "base_image_name".to_string();
-        let tag = "tag".to_string();
-        let image_type = super::ImageType::BaseImage {
-            name: name.clone(),
-            tag: tag.clone(),
-        };
-        let expected_string = format!(
-            r#"---
+                assert!(serialized_string.is_ok());
+                assert_eq!(expected_string, serialized_string.unwrap());
+            }
+
+            #[test]
+            fn non_scrach_image() {
+                let name = "base_image_name";
+                let tag = "tag";
+                let image_type = ImageType::BaseImage {
+                    name: name.to_string(),
+                    tag: tag.to_string(),
+                };
+                let expected_string = format!(
+                    r#"---
 name: {}
 tag: {}
 "#,
-            name, tag
-        );
-        let serialized_string = serde_yaml::to_string(&image_type);
-        assert!(serialized_string.is_ok());
-        assert_eq!(expected_string, serialized_string.unwrap(),);
+                    name, tag
+                );
+                let serialized_string = serde_yaml::to_string(&image_type);
+
+                assert!(serialized_string.is_ok());
+                assert_eq!(expected_string, serialized_string.unwrap(),);
+            }
+        }
     }
 
-    #[test]
-    fn test_deserialize() {
-        let original_string = format!(
-            r#"---
-name: {}
-"#,
-            super::SCRATCH_IMAGE_NAME
-        );
-        let image_type = super::ImageType::Scratch;
-        assert_eq!(
-            image_type,
-            serde_yaml::from_str(original_string.as_str()).expect("scratch image")
-        );
+    mod deserializability {
+        mod deserializable {
+            use super::super::super::{tag, ImageType, SCRATCH_IMAGE_NAME};
 
-        let name = "base_image_name".to_string();
-        let tag = "tag".to_string();
-        let image_type = super::ImageType::BaseImage {
-            name: name.clone(),
-            tag: tag.clone(),
-        };
-        let original_string = format!(
-            r#"---
-name: {}
-tag: {}
-"#,
-            name, tag
-        );
-        assert_eq!(
-            image_type,
-            serde_yaml::from_str(original_string.as_str())
-                .unwrap_or_else(|_| panic!("non scratch image (base: {}, tag: {})", name, tag))
-        );
+            #[test]
+            fn scrach_image() {
+                let original_string = format!(
+                    r#"---
+                    name: {}
+                    "#,
+                    SCRATCH_IMAGE_NAME
+                );
+                let image_type = ImageType::Scratch;
+                let deserialized_image_type = serde_yaml::from_str(original_string.as_str());
 
-        let original_string = format!(
-            r#"---
-name: {}
-"#,
-            name,
-        );
-        let image_type = super::ImageType::BaseImage {
-            name: name.clone(),
-            tag: super::tag::LATEST_TAG.to_string(),
-        };
-        assert_eq!(
-            image_type,
-            serde_yaml::from_str(original_string.as_str()).unwrap_or_else(|_| panic!(
-                "non scratch image (base: {}, tag: {})",
-                name,
-                super::tag::LATEST_TAG
-            ))
-        )
+                assert!(deserialized_image_type.is_ok());
+                assert_eq!(image_type, deserialized_image_type.unwrap());
+            }
+
+            #[test]
+            fn non_scrach_image_with_custom_tag() {
+                let name = "base_image_name";
+                let tag = "tag";
+                let image_type = ImageType::BaseImage {
+                    name: name.to_string(),
+                    tag: tag.to_string(),
+                };
+                let original_string = format!(
+                    r#"---
+                    name: {}
+                    tag: {}
+                    "#,
+                    name, tag
+                );
+                let deserialized_image_type = serde_yaml::from_str(original_string.as_str());
+
+                assert!(deserialized_image_type.is_ok());
+                assert_eq!(image_type, deserialized_image_type.unwrap());
+            }
+
+            #[test]
+            fn latest_non_scrach_image() {
+                let name = "base_image_name";
+                let original_string = format!(
+                    r#"---
+                    name: {}
+                    "#,
+                    name,
+                );
+                let image_type = ImageType::BaseImage {
+                    name: name.to_string(),
+                    tag: tag::LATEST_TAG.to_string(),
+                };
+                let deserialized_image_type = serde_yaml::from_str(original_string.as_str());
+
+                assert!(deserialized_image_type.is_ok());
+                assert_eq!(image_type, deserialized_image_type.unwrap(),);
+            }
+        }
     }
 }

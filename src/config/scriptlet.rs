@@ -10,44 +10,62 @@ pub enum Scriptlet {
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn test_add_scriptlet_serialize() {
-        let source = "source";
-        let destination = "destination";
-        let scriptlet = super::Scriptlet::Add {
-            source: source.to_string(),
-            destination: destination.to_string(),
-        };
-        let expected_string = format!(
-            r#"---
+    mod add {
+        use super::super::Scriptlet;
+
+        #[test]
+        fn serializable() {
+            let source = "source";
+            let destination = "destination";
+            let scriptlet = Scriptlet::Add {
+                source: source.to_string(),
+                destination: destination.to_string(),
+            };
+            let expected_string = format!(
+                r#"---
 type: add
 source: {}
 destination: {}
 "#,
-            source, destination
-        );
-        let serialized_string = serde_yaml::to_string(&scriptlet);
-        assert!(serialized_string.is_ok());
-        assert_eq!(expected_string, serialized_string.unwrap(),);
-    }
-
-    #[test]
-    fn test_add_scriptlet_deserialize() {
-        let source = "source";
-        let destination = "destination";
-        let original_string = format!(
-            "{{ type: add, source: {:?}, destination: {:?} }}",
-            source, destination
-        );
-        assert_eq!(
-            super::Scriptlet::Add {
-                source: source.to_string(),
-                destination: destination.to_string(),
-            },
-            serde_yaml::from_str(original_string.as_str()).unwrap_or_else(|_| panic!(
-                "add type (source: {}, destination: {})",
                 source, destination
-            ))
-        );
+            );
+            let serialized_string = serde_yaml::to_string(&scriptlet);
+
+            assert!(serialized_string.is_ok());
+            assert_eq!(expected_string, serialized_string.unwrap());
+        }
+
+        mod deserializability {
+            use super::super::super::Scriptlet;
+
+            #[test]
+            fn deserializable() {
+                let source = "source";
+                let destination = "destination";
+                let original_string = format!(
+                    "{{ type: add, source: {:?}, destination: {:?} }}",
+                    source, destination
+                );
+                let deserialized_scriptlet =
+                    serde_yaml::from_str::<Scriptlet>(original_string.as_str());
+
+                assert!(deserialized_scriptlet.is_ok());
+                assert_eq!(
+                    Scriptlet::Add {
+                        source: source.to_string(),
+                        destination: destination.to_string(),
+                    },
+                    deserialized_scriptlet.unwrap(),
+                );
+            }
+
+            #[test]
+            fn undeserializable() {
+                let original_string = "{{ type: add, source: source }}";
+                let deserialized_scriptlet = serde_yaml::from_str::<Scriptlet>(original_string);
+
+                assert!(deserialized_scriptlet.is_err());
+            }
+        }
     }
 }

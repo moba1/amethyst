@@ -61,134 +61,137 @@ impl error::Error for ScriptletLoadError {}
 
 #[cfg(test)]
 mod tests {
-    use std::error;
-    use std::fmt;
-    use std::io::Write;
+    mod script_load_error_function {
+        use super::super::scriptlet_load_error;
+        use std::error;
+        use std::fmt;
 
-    use crate::config::scriptlet;
+        #[test]
+        fn create_script_load_error() {
+            const ORIGINAL_ERROR_MESSAGE: &str = "original error";
+            #[derive(Debug)]
+            struct OriginalError;
+            impl fmt::Display for OriginalError {
+                fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                    write!(f, "{}", ORIGINAL_ERROR_MESSAGE)
+                }
+            }
+            impl error::Error for OriginalError {}
 
-    #[test]
-    fn test_scriptlet_load_error() {
-        const ORIGINAL_ERROR_MESSAGE: &str = "original error";
-        #[derive(Debug)]
-        struct OriginalError;
-        impl fmt::Display for OriginalError {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                write!(f, "{}", ORIGINAL_ERROR_MESSAGE)
+            const PATH: &str = "./";
+            const ORIGINAL_ERROR: OriginalError = OriginalError;
+
+            assert_eq!(
+                format!(
+                    "cannot load scriptlet file: {:?} [{}]",
+                    PATH, ORIGINAL_ERROR
+                ),
+                format!("{}", scriptlet_load_error(PATH, Box::new(ORIGINAL_ERROR)))
+            );
+        }
+    }
+
+    mod to_scriptlets_method {
+        mod file_module {
+            use std::io::Write;
+
+            use super::super::super::super::scriptlet;
+            use super::super::super::Module;
+
+            #[test]
+            fn to_scriptlets() {
+                let mut module_file =
+                    tempfile::NamedTempFile::new().expect("temporary file created");
+                let original_scriptlets = vec![
+                    scriptlet::Scriptlet::Add {
+                        source: "source1.yaml".to_string(),
+                        destination: "destination1.yaml".to_string(),
+                    },
+                    scriptlet::Scriptlet::Add {
+                        source: "source2.yaml".to_string(),
+                        destination: "destination2.yaml".to_string(),
+                    },
+                ];
+                let content = serde_yaml::to_string(&original_scriptlets)
+                    .expect("cannot initialize module file");
+                write!(&mut module_file, "{}", content).expect("initialize module file");
+
+                let module = Module::File(module_file.path().to_string_lossy().to_string());
+                let parsed_scriptlets = module.to_scriptlets();
+
+                assert!(parsed_scriptlets.is_ok());
+            }
+
+            #[test]
+            fn unloadable() {
+                let module_file = tempfile::NamedTempFile::new().expect("temporary file created");
+                let reserved_file_path = module_file
+                    .path()
+                    .join("abcd")
+                    .to_string_lossy()
+                    .to_string();
+
+                assert!(Module::File(reserved_file_path).to_scriptlets().is_err());
             }
         }
-        impl error::Error for OriginalError {}
 
-        const PATH: &str = "./";
-        const ORIGINAL_ERROR: OriginalError = OriginalError;
+        mod inline_module {
+            use super::super::super::super::scriptlet;
+            use super::super::super::Module;
 
-        assert_eq!(
-            format!(
-                "cannot load scriptlet file: {:?} [{}]",
-                PATH, ORIGINAL_ERROR
-            ),
-            format!(
-                "{}",
-                super::scriptlet_load_error(PATH, Box::new(ORIGINAL_ERROR))
-            )
-        )
-    }
+            #[test]
+            fn to_scriptlets() {
+                let original_scriptlet = scriptlet::Scriptlet::Add {
+                    source: "source.yaml".to_string(),
+                    destination: "destination.yaml".to_string(),
+                };
+                let module = Module::Inline(original_scriptlet.clone());
+                let parsed_scriptlets = module.to_scriptlets();
 
-    #[test]
-    fn test_scriptlet_load_format() {
-        const ORIGINAL_ERROR_MESSAGE: &str = "original error";
-        #[derive(Debug)]
-        struct OriginalError;
-        impl fmt::Display for OriginalError {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                write!(f, "{}", ORIGINAL_ERROR_MESSAGE)
+                assert!(parsed_scriptlets.is_ok());
+                assert_eq!(parsed_scriptlets.unwrap(), vec![original_scriptlet]);
             }
         }
-        impl error::Error for OriginalError {}
-
-        const PATH: &str = "./";
-
-        let error = super::ScriptletLoadError {
-            original_error: Box::new(OriginalError),
-            path: PATH.to_string(),
-        };
-        assert_eq!(
-            format!("{}", error),
-            format!(
-                "cannot load scriptlet file: {} [{}]",
-                PATH, ORIGINAL_ERROR_MESSAGE
-            ),
-        );
     }
 
-    #[test]
-    fn test_to_scriptlets_with_file_module() {
-        let mut module_file = tempfile::NamedTempFile::new().expect("temporary file created");
-        let original_scriptlets = vec![
-            scriptlet::Scriptlet::Add {
-                source: "./source1.yaml".to_string(),
-                destination: "./destination1.yaml".to_string(),
-            },
-            scriptlet::Scriptlet::Add {
-                source: "./source2.yaml".to_string(),
-                destination: "./destination2.yaml".to_string(),
-            },
-        ];
-        let content =
-            serde_yaml::to_string(&original_scriptlets).expect("cannot initialize module file");
-        write!(&mut module_file, "{}", content).expect("initialize module file");
+    mod deserializable {
+        use super::super::super::scriptlet;
+        use super::super::Module;
 
-        let module = super::Module::File(module_file.path().to_string_lossy().to_string());
-        let parsed_scriptlets = module.to_scriptlets();
-        assert!(parsed_scriptlets.is_ok());
-        let parsed_scriptlets = parsed_scriptlets.unwrap();
-        assert_eq!(parsed_scriptlets, original_scriptlets);
+        #[test]
+        fn inline_module() {
+            let source_path = "source_file";
+            let destination_path = "destination_file";
+            let original_string = format!(
+                r#"
+                type: add
+                source: {}
+                destination: {}
+                "#,
+                source_path, destination_path,
+            );
+            let deserialized_module = serde_yaml::from_str::<Module>(&original_string);
 
-        assert!(super::Module::File("./abcd".to_string())
-            .to_scriptlets()
-            .is_err());
-    }
+            assert!(deserialized_module.is_ok());
+            assert_eq!(
+                deserialized_module.unwrap(),
+                Module::Inline(scriptlet::Scriptlet::Add {
+                    source: source_path.to_string(),
+                    destination: destination_path.to_string(),
+                })
+            );
+        }
 
-    #[test]
-    fn test_to_scriptlets_with_inline_module() {
-        let original_scriptlet = scriptlet::Scriptlet::Add {
-            source: "./source.yaml".to_string(),
-            destination: "./destination.yaml".to_string(),
-        };
-        let module = super::Module::Inline(original_scriptlet.clone());
-        let parsed_scriptlets = module.to_scriptlets();
-        assert!(parsed_scriptlets.is_ok());
-        assert_eq!(parsed_scriptlets.unwrap(), vec![original_scriptlet]);
-    }
+        #[test]
+        fn file_module() {
+            let original_string = "test";
+            let deserialized_module = serde_yaml::from_str::<Module>(original_string);
 
-    #[test]
-    fn test_deserialize() {
-        let original_string = "test";
-        let deserialized_module = serde_yaml::from_str::<super::Module>(original_string);
-        assert!(deserialized_module.is_ok());
-        assert_eq!(
-            deserialized_module.unwrap(),
-            super::Module::File(original_string.to_string())
-        );
-
-        let source_path = "source_file";
-        let destination_path = "destination_file";
-        let original_string = format!(
-            r#"
-type: add
-source: {}
-destination: {}
-"#,
-            source_path, destination_path,
-        );
-        let deserialized_module = serde_yaml::from_str::<super::Module>(&original_string);
-        assert!(deserialized_module.is_ok());
-        assert_eq!(
-            deserialized_module.unwrap(),
-            super::Module::Inline(scriptlet::Scriptlet::Add {
-                source: source_path.to_string(),
-                destination: destination_path.to_string(),
-            })
-        );
+            assert!(deserialized_module.is_ok());
+            assert_eq!(
+                deserialized_module.unwrap(),
+                Module::File(original_string.to_string())
+            );
+        }
     }
 }
