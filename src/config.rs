@@ -11,7 +11,7 @@ use std::fs;
 use std::io::Read;
 use std::path;
 
-const CONFIG_FILE_NAME: &'static str = "amethyst.yaml";
+const CONFIG_FILE_NAME: &str = "amethyst.yaml";
 
 #[derive(Debug, Deserialize, Serialize)]
 #[cfg_attr(test, derive(PartialEq))]
