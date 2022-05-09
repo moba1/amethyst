@@ -192,19 +192,21 @@ tag: {}
     }
 
     mod slurp_scriptlets {
+        use super::super::super::image::typ;
         use super::super::super::module;
         use super::super::super::scriptlet;
         use super::super::Image;
-        use super::super::super::image::typ;
 
         #[test]
         fn cannot_slurp_scriptlets_by_unloadable_file_module() {
             let reserved_file = tempfile::NamedTempFile::new().expect("create reserved file");
-            let path = reserved_file.path().join("abcd").to_string_lossy().to_string();
+            let path = reserved_file
+                .path()
+                .join("abcd")
+                .to_string_lossy()
+                .to_string();
 
-            let scripts = vec![
-                module::Module::File(path),
-            ];
+            let scripts = vec![module::Module::File(path)];
             let image = Image::<module::Module> {
                 base_image: typ::ImageType::Scratch,
                 tag: "tag".to_string(),
@@ -217,14 +219,10 @@ tag: {}
 
         #[test]
         fn scriptlets_slurpable() {
-            let scripts = vec![
-                module::Module::Inline(
-                    scriptlet::Scriptlet::Add {
-                        source: "source".to_string(),
-                        destination: "destination".to_string(),
-                    }
-                )
-            ];
+            let scripts = vec![module::Module::Inline(scriptlet::Scriptlet::Add {
+                source: "source".to_string(),
+                destination: "destination".to_string(),
+            })];
             let image = Image::<module::Module> {
                 base_image: typ::ImageType::Scratch,
                 tag: "tag".to_string(),
