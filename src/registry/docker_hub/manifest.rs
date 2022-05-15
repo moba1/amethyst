@@ -1,4 +1,6 @@
+use crate::storage;
 use serde::Deserialize;
+use std::path;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -25,3 +27,9 @@ pub struct Manifest {
     pub config: Config,
     pub layers: Vec<Layer>,
 }
+
+pub fn storage() -> path::PathBuf {
+    storage::storage().join("docker")
+}
+
+pub const MANIFEST_FILENAME: &str = "manifest.json";

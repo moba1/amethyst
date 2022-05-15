@@ -5,6 +5,7 @@ pub mod token;
 use super::registry;
 use crate::http;
 use crate::result;
+use crate::storage;
 
 use serde::Deserialize;
 use std::fs;
@@ -42,7 +43,7 @@ impl DockerHub {
         if !resp.status().is_success() {
             return Err(Box::new(http::HttpError {
                 status_code: resp.status(),
-                message: format!("cannot fetch manifest from docker hub registry"),
+                message: "cannot fetch manifest from docker hub registry".to_string(),
             }));
         }
 
@@ -64,7 +65,7 @@ impl DockerHub {
         if !resp.status().is_success() {
             return Err(Box::new(http::HttpError {
                 status_code: resp.status(),
-                message: format!("cannot fetch blobs from docker hub registry"),
+                message: "cannot fetch blobs from docker hub registry".to_string(),
             }));
         }
 
@@ -100,14 +101,12 @@ fn normalize_repository(repository: &str) -> result::Result<String> {
     let resp = reqwest::blocking::get(url)?;
     match resp.status() {
         reqwest::StatusCode::OK => Ok(format!("library/{}", repository)),
-        reqwest::StatusCode::NOT_FOUND => Ok(format!("{}", repository)),
+        reqwest::StatusCode::NOT_FOUND => Ok(repository.to_string()),
         _ => Err(Box::new(error::UnknownImageNameError {
             image_name: repository.to_string(),
         })),
     }
 }
-
-const MANIFEST_FILE_NAME: &str = "manifest.json";
 
 impl registry::Registry for DockerHub {
     fn download_base_image(&self, repository: &str, tag: &str) -> result::Result<path::PathBuf> {
@@ -122,16 +121,18 @@ impl registry::Registry for DockerHub {
             Some(token) => token.clone(),
             None => bearer_token(repository.as_str())?,
         };
-        let storage = path::Path::new(Self::image_storage().as_str())
-            .join(&repository)
-            .join(tag);
-        fs::create_dir_all(&storage)?;
+        let manifest_storage = manifest::storage().join(&repository).join(tag);
+        fs::create_dir_all(&manifest_storage)?;
 
         let manifest = self.manifest(repository.as_str(), tag, &token)?;
-        fs::write(storage.as_path().join(MANIFEST_FILE_NAME), &manifest)?;
+        fs::write(
+            manifest_storage.join(manifest::MANIFEST_FILENAME),
+            &manifest,
+        )?;
         let manifest: manifest::Manifest = serde_json::from_slice(&manifest)?;
 
-        let blob_storage = storage.join("blobs");
+        let blob_storage = storage::blob_storage();
+        fs::create_dir_all(&blob_storage)?;
         for layer in manifest.layers {
             let blob = self.blob(repository.as_str(), layer.digest.as_str(), &token)?;
             fs::write(blob_storage.join(layer.digest), blob)?;
@@ -139,11 +140,6 @@ impl registry::Registry for DockerHub {
         let blob = self.blob(repository.as_str(), manifest.config.digest.as_str(), &token)?;
         fs::write(blob_storage.join(manifest.config.digest), blob)?;
 
-        Ok(storage)
-    }
-
-    #[cfg(target_os = "linux")]
-    fn image_storage() -> String {
-        "/var/lib/amethyst/docker-image".to_string()
+        Ok(manifest_storage)
     }
 }

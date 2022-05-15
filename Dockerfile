@@ -1,4 +1,4 @@
-FROM rust:1 as builder
+FROM rust:1-buster as builder
 WORKDIR /usr/src/amethyst
 COPY . .
 RUN cargo install --path .

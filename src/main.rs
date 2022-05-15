@@ -3,6 +3,7 @@ mod config;
 mod http;
 mod registry;
 mod result;
+mod storage;
 
 use std::process;
 
@@ -24,9 +25,8 @@ struct Args {
 }
 
 fn main() {
-    // let client = docker_hub::DockerHub::new(None).unwrap();
-    // client.image("ubuntu", "latest").unwrap();
-    // return;
+    let client = docker_hub::DockerHub::new(None).unwrap();
+    client.download_base_image("ubuntu", "latest").unwrap();
     let args = Args::parse();
     let command = match &args.command {
         Commands::Build { config_directory } => || command::build(config_directory.clone()),
